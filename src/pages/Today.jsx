@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { HABITS, SECTIONS } from '../habits'
 import { getTodayDone, toggleHabit, resetToday, calcStreak } from '../store'
-import { getNotifPrefs, saveNotifPrefs, scheduleNotifications } from '../notifications'
+import { getNotifPrefs, saveNotifPrefs, scheduleNotifications, getNotifPermission } from '../notifications'
 
 const SECTION_LABELS = { morning: 'Morning', office: 'Office', evening: 'Evening' }
 const TOTAL = HABITS.length
@@ -9,7 +9,7 @@ const TOTAL = HABITS.length
 export default function Today() {
   const [done, setDone] = useState(getTodayDone())
   const [prefs, setPrefs] = useState(getNotifPrefs())
-  const notifGranted = Notification?.permission === 'granted'
+  const notifGranted = getNotifPermission() === 'granted'
 
   const refresh = () => setDone(getTodayDone())
 

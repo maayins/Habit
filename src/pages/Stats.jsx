@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { HABITS } from '../habits'
 import { calcStreak, calcBestStreak, calcAllTimeRate, calcMostMissed, getStore } from '../store'
-import { testNotification } from '../notifications'
+import { testNotification, getNotifPermission } from '../notifications'
 
 const TOTAL = HABITS.length
 
