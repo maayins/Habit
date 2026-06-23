@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { HABITS, NOTIFICATIONS } from '../habits'
+import { HABITS } from '../habits'
 import { calcStreak, calcBestStreak, calcAllTimeRate, calcMostMissed, getStore } from '../store'
-import { getNotifPrefs, saveNotifPrefs, scheduleNotifications, testNotification } from '../notifications'
+import { testNotification } from '../notifications'
 
 const TOTAL = HABITS.length
 
 export default function Stats() {
   const [testResult, setTestResult] = useState(null)
-  const [prefs, setPrefs] = useState(getNotifPrefs())
-
   const streak = calcStreak(TOTAL)
   const best = calcBestStreak(TOTAL)
   const rate = calcAllTimeRate(TOTAL)
@@ -23,15 +21,6 @@ export default function Stats() {
     const done = days.filter(k => s[k][h.id]).length
     return { ...h, rate: Math.round((done / days.length) * 100) }
   }).sort((a, b) => a.rate - b.rate)
-
-  const togglePref = (id) => {
-    const updated = { ...prefs, [id]: !prefs[id] }
-    setPrefs(updated)
-    saveNotifPrefs(updated)
-    scheduleNotifications()
-  }
-
-  const notifGranted = Notification?.permission === 'granted'
 
   return (
     <div className="px-4 py-4">
@@ -86,41 +75,7 @@ export default function Stats() {
       )}
 
       <div className="border-t border-gray-100 dark:border-gray-800 pt-5">
-        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Reminders</p>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-          {notifGranted ? 'Toggle each reminder on or off.' : 'Enable reminders from the banner on the Today tab first.'}
-        </p>
-
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-50 dark:divide-gray-800 mb-3">
-          {NOTIFICATIONS.map(n => {
-            const hour = n.hour % 12 || 12
-            const ampm = n.hour >= 12 ? 'PM' : 'AM'
-            const min = String(n.min).padStart(2, '0')
-            const timeStr = `${hour}:${min} ${ampm}`
-            const on = prefs[n.id]
-            return (
-              <div key={n.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${on ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'}`}>
-                    {n.title}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{timeStr} · {n.body}</p>
-                </div>
-                <button
-                  onClick={() => notifGranted && togglePref(n.id)}
-                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                    on && notifGranted
-                      ? 'bg-emerald-500'
-                      : 'bg-gray-200 dark:bg-gray-700'
-                  } ${!notifGranted ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${on && notifGranted ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-              </div>
-            )
-          })}
-        </div>
-
+        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Notifications</p>
         <button
           onClick={() => {
             const ok = testNotification()
@@ -137,6 +92,7 @@ export default function Stats() {
         {testResult === 'blocked' && (
           <p className="text-center text-xs text-red-500 mt-2">Permission not granted — tap "Enable reminders" on Today tab first</p>
         )}
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-2">Toggle reminders per habit using the 🔔 on the Today tab</p>
       </div>
     </div>
   )

@@ -1,18 +1,29 @@
 import { useState, useEffect } from 'react'
 import { HABITS, SECTIONS } from '../habits'
 import { getTodayDone, toggleHabit, resetToday, calcStreak } from '../store'
+import { getNotifPrefs, saveNotifPrefs, scheduleNotifications } from '../notifications'
 
 const SECTION_LABELS = { morning: 'Morning', office: 'Office', evening: 'Evening' }
 const TOTAL = HABITS.length
 
 export default function Today() {
   const [done, setDone] = useState(getTodayDone())
+  const [prefs, setPrefs] = useState(getNotifPrefs())
+  const notifGranted = Notification?.permission === 'granted'
 
   const refresh = () => setDone(getTodayDone())
 
   const handleToggle = (id) => {
     toggleHabit(id)
     refresh()
+  }
+
+  const handleBell = (id) => {
+    if (!notifGranted) return
+    const updated = { ...prefs, [id]: !prefs[id] }
+    setPrefs(updated)
+    saveNotifPrefs(updated)
+    scheduleNotifications()
   }
 
   const count = Object.keys(done).length
@@ -59,7 +70,15 @@ export default function Today() {
             </div>
             <div className="space-y-2">
               {habits.map(h => (
-                <HabitRow key={h.id} habit={h} checked={!!done[h.id]} onToggle={() => handleToggle(h.id)} />
+                <HabitRow
+                  key={h.id}
+                  habit={h}
+                  checked={!!done[h.id]}
+                  bellOn={!!prefs[h.id]}
+                  notifGranted={notifGranted}
+                  onToggle={() => handleToggle(h.id)}
+                  onBell={() => handleBell(h.id)}
+                />
               ))}
             </div>
           </div>
@@ -76,33 +95,51 @@ export default function Today() {
   )
 }
 
-function HabitRow({ habit, checked, onToggle }) {
+function HabitRow({ habit, checked, bellOn, notifGranted, onToggle, onBell }) {
   return (
-    <button
-      onClick={onToggle}
-      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all active:scale-98 ${
-        checked
-          ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
-          : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'
-      }`}
-    >
-      <div className={`w-6 h-6 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
-        checked
-          ? 'bg-emerald-500 border-emerald-500 text-white'
-          : 'border-gray-300 dark:border-gray-600'
-      }`}>
-        {checked && <span className="text-xs font-bold">✓</span>}
-      </div>
-      <span className="text-lg">{habit.icon}</span>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${checked ? 'text-emerald-800 dark:text-emerald-200 line-through opacity-70' : 'text-gray-900 dark:text-gray-100'}`}>
-          {habit.label}
-        </p>
-        <p className={`text-xs ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>
-          {habit.time}
-        </p>
-      </div>
-    </button>
+    <div className={`flex items-center gap-2 rounded-xl border transition-all ${
+      checked
+        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+        : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'
+    }`}>
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-3 flex-1 p-3 text-left min-w-0"
+      >
+        <div className={`w-6 h-6 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
+          checked
+            ? 'bg-emerald-500 border-emerald-500 text-white'
+            : 'border-gray-300 dark:border-gray-600'
+        }`}>
+          {checked && <span className="text-xs font-bold">✓</span>}
+        </div>
+        <span className="text-lg">{habit.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-medium truncate ${checked ? 'text-emerald-800 dark:text-emerald-200 line-through opacity-70' : 'text-gray-900 dark:text-gray-100'}`}>
+            {habit.label}
+          </p>
+          <p className={`text-xs ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>
+            {habit.time}
+          </p>
+        </div>
+      </button>
+      <button
+        onClick={onBell}
+        title={notifGranted ? (bellOn ? 'Disable reminder' : 'Enable reminder') : 'Enable notifications first'}
+        className={`pr-3 pl-1 py-3 flex-shrink-0 transition-colors ${
+          !notifGranted
+            ? 'opacity-25 cursor-not-allowed'
+            : bellOn
+              ? 'text-emerald-500'
+              : 'text-gray-300 dark:text-gray-600'
+        }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={bellOn && notifGranted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </button>
+    </div>
   )
 }
 
