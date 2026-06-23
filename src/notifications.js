@@ -6,10 +6,30 @@ export async function requestPermission() {
   return result === 'granted'
 }
 
+export function getNotifPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('notif_prefs') || '{}')
+    const prefs = {}
+    for (const n of NOTIFICATIONS) {
+      prefs[n.id] = saved[n.id] !== undefined ? saved[n.id] : true
+    }
+    return prefs
+  } catch { return Object.fromEntries(NOTIFICATIONS.map(n => [n.id, true])) }
+}
+
+export function saveNotifPrefs(prefs) {
+  try { localStorage.setItem('notif_prefs', JSON.stringify(prefs)) } catch {}
+}
+
+let _timers = []
+
 export function scheduleNotifications() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
+  _timers.forEach(t => clearTimeout(t))
+  _timers = []
+  const prefs = getNotifPrefs()
   for (const n of NOTIFICATIONS) {
-    scheduleDaily(n)
+    if (prefs[n.id]) scheduleDaily(n)
   }
 }
 
@@ -19,7 +39,7 @@ function scheduleDaily(n) {
   next.setHours(n.hour, n.min, 0, 0)
   if (next <= now) next.setDate(next.getDate() + 1)
   const delay = next - now
-  setTimeout(() => {
+  const t = setTimeout(() => {
     new Notification(n.title, {
       body: n.body,
       icon: '/icons/icon-192.png',
@@ -28,4 +48,14 @@ function scheduleDaily(n) {
     })
     scheduleDaily(n)
   }, delay)
+  _timers.push(t)
+}
+
+export function testNotification() {
+  if (Notification?.permission !== 'granted') return false
+  new Notification('Test reminder 🔔', {
+    body: 'Notifications are working!',
+    icon: '/icons/icon-192.png',
+  })
+  return true
 }
