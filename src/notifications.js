@@ -1,9 +1,16 @@
 import { NOTIFICATIONS } from './habits'
 
+const hasNotif = () => typeof Notification !== 'undefined'
+
 export async function requestPermission() {
-  if (!('Notification' in window)) return false
+  if (!hasNotif()) return false
   const result = await Notification.requestPermission()
   return result === 'granted'
+}
+
+export function getNotifPermission() {
+  if (!hasNotif()) return 'unsupported'
+  return Notification.permission
 }
 
 export function getNotifPrefs() {
@@ -24,7 +31,7 @@ export function saveNotifPrefs(prefs) {
 let _timers = []
 
 export function scheduleNotifications() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  if (!hasNotif() || Notification.permission !== 'granted') return
   _timers.forEach(t => clearTimeout(t))
   _timers = []
   const prefs = getNotifPrefs()
@@ -52,7 +59,7 @@ function scheduleDaily(n) {
 }
 
 export function testNotification() {
-  if (Notification?.permission !== 'granted') return false
+  if (!hasNotif() || Notification.permission !== 'granted') return false
   new Notification('Test reminder 🔔', {
     body: 'Notifications are working!',
     icon: '/icons/icon-192.png',

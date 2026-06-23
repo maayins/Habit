@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Today from './pages/Today'
 import Week from './pages/Week'
 import Stats from './pages/Stats'
-import { scheduleNotifications, requestPermission } from './notifications'
+import { scheduleNotifications, requestPermission, getNotifPermission } from './notifications'
 
 const TABS = [
   { id: 'today', label: 'Today', icon: '✓' },
@@ -12,10 +12,10 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('today')
-  const [notifStatus, setNotifStatus] = useState(Notification?.permission || 'default')
+  const [notifStatus, setNotifStatus] = useState(getNotifPermission())
 
   useEffect(() => {
-    if (Notification?.permission === 'granted') {
+    if (getNotifPermission() === 'granted') {
       scheduleNotifications()
       setNotifStatus('granted')
     }
@@ -43,7 +43,7 @@ export default function App() {
         </div>
       </header>
 
-      {notifStatus !== 'granted' && (
+      {notifStatus !== 'granted' && notifStatus !== 'unsupported' && (
         <div className="max-w-lg mx-auto w-full px-4 pt-3">
           <button
             onClick={handleEnableNotifications}
