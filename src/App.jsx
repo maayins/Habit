@@ -12,21 +12,24 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('today')
-  const [notifAsked, setNotifAsked] = useState(false)
+  const [notifStatus, setNotifStatus] = useState(Notification?.permission || 'default')
 
   useEffect(() => {
-    const asked = localStorage.getItem('notif_asked')
-    if (!asked) {
-      setTimeout(async () => {
-        const granted = await requestPermission()
-        if (granted) scheduleNotifications()
-        localStorage.setItem('notif_asked', '1')
-        setNotifAsked(true)
-      }, 2000)
-    } else if (Notification?.permission === 'granted') {
+    if (Notification?.permission === 'granted') {
       scheduleNotifications()
+      setNotifStatus('granted')
     }
   }, [])
+
+  const handleEnableNotifications = async () => {
+    const granted = await requestPermission()
+    if (granted) {
+      scheduleNotifications()
+      setNotifStatus('granted')
+    } else {
+      setNotifStatus('denied')
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -39,6 +42,22 @@ export default function App() {
           <span className="text-2xl">🔥</span>
         </div>
       </header>
+
+      {notifStatus !== 'granted' && (
+        <div className="max-w-lg mx-auto w-full px-4 pt-3">
+          <button
+            onClick={handleEnableNotifications}
+            className="w-full flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 text-left"
+          >
+            <span className="text-xl">🔔</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Enable reminders</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">Tap to get notified at key times</p>
+            </div>
+            <span className="text-emerald-500 text-lg">→</span>
+          </button>
+        </div>
+      )}
 
       <main className="flex-1 overflow-y-auto pb-24">
         <div className="max-w-lg mx-auto">
